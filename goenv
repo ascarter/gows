@@ -1,3 +1,5 @@
+#  -*- mode: unix-shell-script; -*-
+
 _goenv_help() {
     print "Go workspace manager\n"
     print "Usage:\n"
