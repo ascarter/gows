@@ -1,0 +1,87 @@
+# gows sets the current go workspace
+
+_gows_find_ws_path () {
+    local WSPATH=$(pwd)
+    while [[ "$WSPATH" != "" && ! -e "$WSPATH/bin" && ! -e "$WSPATH/pkg" && ! -e "$WSPATH/src" ]]; do
+        WSPATH=${WSPATH%/*}
+    done
+    echo "$WSPATH"
+}
+
+_gows_which_workspace() {
+    if [[ -n "$GOPATH" && -d "$GOPATH" ]]; then
+        print "Go workspace $GOPATH"
+    else
+        print "Go workspace not set"
+    fi
+}
+
+_gows_enter_workspace() {
+    if [[ -n "$1" && -d "$1" ]]; then
+        if [ -n "$GOPATH" ]; then
+            _gows_exit_workspace
+        fi
+    
+        # Cache the original path
+        _GOWS_OLD_PATH=$PATH
+        export _GOWS_OLD_PATH
+
+        # Set GOPATH    
+        GOPATH=$1
+        export GOPATH
+        PATH=$PATH:$GOPATH/bin
+        export PATH
+    else
+        print "Workspace missing"
+    fi
+}
+
+_gows_exit_workspace() {
+    if [ -n "$GOPATH" ]; then    
+        if [ -n "$_GOWS_OLD_PATH" ]; then
+            # Restore original path
+            PATH=$_GOWS_OLD_PATH
+            export PATH
+            unset _GOWS_OLD_PATH
+        fi
+        unset GOPATH
+    else
+        print "Go workspace not set"
+    fi
+}
+
+_gows_init_workspace() {
+    if [ -n "$1" ]; then
+        mkdir -p $1/bin
+        mkdir -p $1/pkg
+        mkdir -p $1/src
+        _gows_enter_workspace $1
+    else
+        print "Path does not exist"
+    fi
+}
+
+gows() {
+    case "$1" in
+    init)
+        if [ -z "$2" ]; then
+            _gows_init_workspace $(pwd)
+        else
+            _gows_init_workspace $2
+        fi
+        ;;
+    enter)
+        if [ -z "$2" ]; then
+            _gows_enter_workspace `_gows_find_ws_path`
+        else
+            _gows_enter_workspace $2
+        fi
+        
+        ;;
+    exit)
+        _gows_exit_workspace
+        ;;
+    which | *)
+        _gows_which_workspace
+    esac
+}
