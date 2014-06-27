@@ -1,0 +1,197 @@
+_goenv_help() {
+    print "Go workspace manager\n"
+    print "Usage:\n"
+    print "\tgoenv command [arguments]\n"
+    print "The commands are:\n"
+    print "\tinit     initialize path as workspace (default working directory)"
+    print "\tset      set workspace to path (default to working directory)"
+    print "\tadd      add path to workspace (default working directory)"
+    print "\trm       remove path from workspace (default working directory)"
+    print "\treset    reset to workspace to empty"
+    print "\tlist     list all workspace paths"
+    print "\twhich    show current Go workspace"
+    print "\ngoenv manages the workspace by setting the GOPATH environment variable"
+    print "When setting or adding a workspace, goenv will search up the path"
+    print "to find the parent with the required GOPATH entries of bin, pkg, and"
+    print "src"
+}
+
+_goenv_fullpath() {
+  case "$1" in
+    /*)
+        echo "$1"
+        ;;
+    *)
+        echo "$PWD/$1"
+        ;;
+  esac
+}
+
+_goenv_find_ws_path() {
+    local WSPATH=$(pwd)
+    while [[ "$WSPATH" != "" && ! -e "$WSPATH/bin" && ! -e "$WSPATH/pkg" && ! -e "$WSPATH/src" ]]; do
+        WSPATH=${WSPATH%/*}
+    done
+    echo "$WSPATH"
+}
+
+_goenv_split() {
+    local -a items=()
+    var=$1
+    sep=$2
+    i=0
+    while [ "$var" ]; do
+        item=${var%%$sep*}
+        items[i]=$item
+        print $item
+        i++
+        [ "$var" = "$item" ] && var='' || var="${var#*$sep}"
+    done
+    echo ${items[@]}
+}
+
+_goenv_init() {
+    if [ -n "$1" ]; then
+        mkdir -p $1/bin
+        mkdir -p $1/pkg
+        mkdir -p $1/src
+        _goenv_add $1
+    else
+        print "Path does not exist"
+    fi
+}
+
+_goenv_set() {
+    if [[ -n "$1" && -d "$1" ]]; then
+        if [ -n "$GOPATH" ]; then
+            _goenv_unset
+        fi
+    
+        # Cache the original path
+        _GOENV_OLD_PATH=$PATH
+        export _GOENV_OLD_PATH
+
+        # Set GOPATH    
+        GOPATH=$1
+        export GOPATH
+        PATH=$PATH:$GOPATH/bin
+        export PATH
+    else
+        print "Go workspace missing"
+    fi
+}
+
+_goenv_add() {
+    if [[ -n "$1" && -d "$1" ]]; then
+        if [[ -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
+            print "Workspace already added"
+        elif [ -z "$_GOENV_OLD_PATH" ]; then
+            _goenv_set $1
+        else
+            GOPATH=$GOPATH:$1
+            export GOPATH
+            PATH=$_GOENV_OLD_PATH:${GOPATH//://bin:}/bin
+        fi
+    else
+        print "Go workspace missing"
+    fi
+}
+
+_goenv_rm() {
+    if [[ -n "$1" && -d "$1" && -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
+        local items=$GOPATH
+        _goenv_reset
+        while [ "$items" ]; do
+            item=${items%%:*}
+            if [ "$item" != "$1" ]; then
+                _goenv_add $item
+            fi
+            [ "$items" = "$item" ] && items='' || items="${items#*:}"
+        done
+    else
+        print "Go workspace missing"
+    fi
+}
+
+_goenv_reset() {
+    if [ -n "$GOPATH" ]; then    
+        if [ -n "$_GOENV_OLD_PATH" ]; then
+            PATH=$_GOENV_OLD_PATH
+            export PATH
+            unset _GOENV_OLD_PATH
+        fi
+        unset GOPATH
+    else
+        print "Go workspace not set"
+    fi
+}
+
+_goenv_list() {    
+    if [[ -n "$GOPATH" ]]; then
+        print "Go workspace paths:"
+        local items=$GOPATH
+        while [ "$items" ]; do
+            item=${items%%:*}
+            print "\t$item"
+            [ "$items" = "$item" ] && items='' || items="${items#*:}"
+        done
+    else
+        print "Go workspace not set"
+    fi
+}
+
+_goenv_which() {
+    if [[ -n "$GOPATH" ]]; then
+        print "Go workspace environment:"
+        print "GOPATH=$GOPATH"
+        print "GOROOT=$GOROOT"
+        print "PATH=$PATH"
+    else
+        print "Go workspace not set"
+    fi
+}
+
+goenv() {
+    case "$1" in
+    init)
+        if [ -z "$2" ]; then
+            _goenv_init $(pwd)
+        else
+            _goenv_init `_goenv_fullpath $2`
+        fi
+        ;;
+    set)
+        if [ -z "$2" ]; then
+            _goenv_set `_goenv_find_ws_path`
+        else
+            _goenv_set `_goenv_fullpath $2`
+        fi
+        ;;
+    add)
+        if [ -z "$2" ]; then
+            _goenv_add `_goenv_find_ws_path`
+        else
+            _goenv_add `_goenv_fullpath $2`
+        fi
+        ;;
+    rm)
+        if [ -z "$2" ]; then
+            _goenv_rm `_goenv_find_ws_path`
+        else
+            _goenv_rm `_goenv_fullpath $2`
+        fi
+        ;;
+    reset)
+        _goenv_reset
+        ;;
+    list)
+        _goenv_list
+        ;;
+    which)
+        _goenv_which
+        ;;
+    help | *)
+        _goenv_help
+        ;;
+    esac
+}
