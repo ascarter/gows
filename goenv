@@ -141,7 +141,7 @@ _goenv_which() {
     fi
 }
 
-goenv() {
+_goenv_exec() {
     case "$1" in
     init)
         if [ -z "$2" ]; then
@@ -170,6 +170,22 @@ goenv() {
         else
             _goenv_rm `_goenv_fullpath $2`
         fi
+        ;;
+    *)
+        print "Invalid command"
+    esac
+}
+
+goenv() {
+    cmd=$1
+    shift
+    
+    case "$cmd" in
+    init | set | add | rm)
+        while (($#)); do
+            _goenv_exec $cmd $1
+        shift
+        done
         ;;
     reset)
         _goenv_reset
