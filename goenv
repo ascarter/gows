@@ -36,18 +36,11 @@ _goenv_find_ws_path() {
 }
 
 _goenv_split() {
-    local -a items=()
-    var=$1
-    sep=$2
-    i=0
-    while [ "$var" ]; do
-        item=${var%%$sep*}
-        items[i]=$item
-        print $item
-        i++
-        [ "$var" = "$item" ] && var='' || var="${var#*$sep}"
-    done
-    echo ${items[@]}
+    OLDIFS="$IFS"
+    IFS=$2
+    items=(`echo $1`)
+    IFS="$OLDIFS"
+    echo $items
 }
 
 _goenv_init() {
@@ -101,12 +94,11 @@ _goenv_rm() {
     if [[ -n "$1" && -d "$1" && -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
         local items=$GOPATH
         _goenv_reset
-        while [ "$items" ]; do
-            item=${items%%:*}
+        items=(`_goenv_split $items ":"`)
+        for item in "${items[@]}"; do
             if [ "$item" != "$1" ]; then
                 _goenv_add $item
             fi
-            [ "$items" = "$item" ] && items='' || items="${items#*:}"
         done
     else
         print "Go workspace missing"
@@ -129,11 +121,9 @@ _goenv_reset() {
 _goenv_list() {    
     if [[ -n "$GOPATH" ]]; then
         print "Go workspace paths:"
-        local items=$GOPATH
-        while [ "$items" ]; do
-            item=${items%%:*}
-            print "\t$item"
-            [ "$items" = "$item" ] && items='' || items="${items#*:}"
+        items=(`_goenv_split $GOPATH ":"`)
+        for item in "${items[@]}"; do
+          print "\t$item"
         done
     else
         print "Go workspace not set"
