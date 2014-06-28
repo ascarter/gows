@@ -12,7 +12,7 @@ _goenv_help() {
     print "\treset    reset to workspace to empty"
     print "\tlist     list all workspace paths"
     print "\twhich    show current Go workspace"
-    print "\tenv      environment variables for workspace
+    print "\tenv      environment variables for workspace"
     print "\ngoenv manages the workspace by setting the GOPATH environment variable"
     print "When setting or adding a workspace, goenv will search up the path"
     print "to find the parent with the required GOPATH entries of bin, pkg, and"
@@ -184,7 +184,7 @@ goenv() {
     init | set | add | rm)
         while (($#)); do
             _goenv_exec $cmd $1
-        shift
+            shift
         done
         ;;
     reset)
