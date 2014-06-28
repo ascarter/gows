@@ -12,6 +12,7 @@ _goenv_help() {
     print "\treset    reset to workspace to empty"
     print "\tlist     list all workspace paths"
     print "\twhich    show current Go workspace"
+    print "\tenv      environment variables for workspace
     print "\ngoenv manages the workspace by setting the GOPATH environment variable"
     print "When setting or adding a workspace, goenv will search up the path"
     print "to find the parent with the required GOPATH entries of bin, pkg, and"
@@ -122,10 +123,9 @@ _goenv_reset() {
 
 _goenv_list() {    
     if [[ -n "$GOPATH" ]]; then
-        print "Go workspace paths:"
         items=(`_goenv_split $GOPATH ":"`)
         for item in "${items[@]}"; do
-          print "\t$item"
+          print "$item"
         done
     else
         print "Go workspace not set"
@@ -133,14 +133,12 @@ _goenv_list() {
 }
 
 _goenv_which() {
-    if [[ -n "$GOPATH" ]]; then
-        print "Go workspace environment:"
+    echo `_goenv_find_ws_path`
+}
+
+_goenv_env() {
         print "GOPATH=$GOPATH"
-        print "GOROOT=$GOROOT"
-        print "PATH=$PATH"
-    else
-        print "Go workspace not set"
-    fi
+        print "GOROOT=$GOROOT"        
 }
 
 _goenv_exec() {
@@ -197,6 +195,9 @@ goenv() {
         ;;
     which)
         _goenv_which
+        ;;
+    env)
+        _goenv_env
         ;;
     help | *)
         _goenv_help
