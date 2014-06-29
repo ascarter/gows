@@ -178,10 +178,10 @@ _goenv_exec() {
 
 goenv() {
     cmd=$1
-    shift
-    
+
     case "$cmd" in
     init | set | add | rm)
+        shift
         while (($#)); do
             _goenv_exec $cmd $1
             shift
