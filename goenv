@@ -182,10 +182,14 @@ goenv() {
     case "$cmd" in
     init | switch | add | rm)
         shift
-        while (($#)); do
-            _goenv_exec $cmd $1
-            shift
-        done
+        if [ $# -gt 0 ]; then
+            while (($#)); do
+                _goenv_exec $cmd $1
+                shift
+            done
+        else
+            _goenv_exec $cmd
+        fi
         ;;
     reset)
         _goenv_reset
