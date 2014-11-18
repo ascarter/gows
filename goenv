@@ -5,6 +5,7 @@ _goenv_help() {
     print "Usage:\n"
     print "\tgoenv command [arguments]\n"
     print "The commands are:\n"
+    print "\trun       detects go path and runs command in that environment"
     print "\tinit      initialize path as workspace (default working directory)"
     print "\tswitch    switch workspace to path (default to working directory)"
     print "\tadd       add path to workspace (default working directory)"
@@ -221,11 +222,22 @@ goenv() {
     _goenv_read_config
     
     case "$cmd" in
+    run)
+    	shift
+    	(
+    		_goenv_exec "switch"
+    		if [ 0 -eq $? ]
+    		then
+    			"$@"
+    		fi
+    	)
+    	;;
     init | switch | add | rm)
         shift
         if [ $# -gt 0 ]
         then
-            while (($#)); do
+            while (($#))
+            do
                 _goenv_exec $cmd $1
                 shift
             done
