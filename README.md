@@ -9,6 +9,7 @@ Usage:
 
 The commands are:
 
+    run      detects go path and runs command in that environment"
 	init     initialize path as workspace (default working directory)
 	set      set workspace to path (default to working directory)
 	add      add path to workspace (default working directory)
