@@ -227,12 +227,7 @@ _goenv_exec() {
         fi
         ;;
     edit)
-        if [ -z "$2" ]
-        then
-            _goenv_edit `_goenv_find_ws_path`/src
-        else
-            _goenv_edit `_goenv_fullpath $2`
-        fi
+        _goenv_edit $edit_path `_goenv_find_ws_path`/src/$2
         ;;
     *)
         echo "Invalid command"
