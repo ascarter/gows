@@ -5,21 +5,42 @@ _goenv_help() {
     echo "Usage:\n"
     echo "\tgoenv command [arguments]\n"
     echo "The commands are:\n"
-    echo "\trun       detects go path and runs command in that environment"
-    echo "\tinit      initialize path as workspace (default working directory)"
-    echo "\tswitch    switch workspace to path (default to working directory)"
-    echo "\tadd       add path to workspace (default working directory)"
-    echo "\trm        remove path from workspace (default working directory)"
-    echo "\treset     reset to empty workspace"
-    echo "\tbootstrap install default packages (defined in .goenvrc)"
-    echo "\tlist      list all workspace paths"
-    echo "\twhich     show current Go workspace"
-    echo "\tenv       environment variables for workspace"
-    echo "\tedit      open package path in VISUAL editor (default \$GOPATH/src)"
-    echo "\tcd        switch to directory of package path (default \$GOPATH/src)"
+    echo "\trun        detects go path and runs command in that environment"
+    echo "\tinit       initialize path as workspace (default working directory)"
+    echo "\tswitch     switch workspace to path (default to working directory)"
+    echo "\tadd        add path to workspace (default working directory)"
+    echo "\trm         remove path from workspace (default working directory)"
+    echo "\treset      reset to empty workspace"
+    echo "\tbootstrap  install default packages (defined in .goenvrc)"
+    echo "\tlist       list all workspace paths"
+    echo "\twhich      show current Go workspace"
+    echo "\tenv        environment variables for workspace"
+    echo "\tedit       open package path in VISUAL editor (default \$GOPATH/src)"
+    echo "\tcd         switch to directory of package path (default \$GOPATH/src)"
     echo "\ngoenv manages the workspace by setting the GOPATH environment variable"
     echo "When setting or adding a workspace, goenv will search up the path"
     echo "to find the parent with the required GOPATH entries of bin, pkg, and src"
+    echo "\nSource goenv.$(basename "${shell:-$SHELL}") to add command completions."
+}
+
+_goenv_commands() {
+	for c in run init switch add rm reset bootstrap list which env edit cd
+	do
+		echo $c
+	done
+}
+
+_goenv_complete() {
+	case "$1" in
+		cd | edit)
+			if [ -n "$GOPATH" ]
+			then
+				comm -3 <(go list all) <(go list std)
+			fi
+			;;
+		*)
+			;;
+	esac
 }
 
 _goenv_read_config() {
@@ -176,12 +197,24 @@ _goenv_env() {
 }
 
 _goenv_edit() {
-    if [ -z "$VISUAL" ]
+    if [[ -n "$GOPATH" ]]
     then
-        echo "VISUAL editor is not set"
-        exit 1
-    fi
-    "$VISUAL" "$1"
+		if [ -z "$VISUAL" ]
+		then
+			echo "VISUAL editor is not set"
+			exit 1
+		fi
+		"$VISUAL" "`_goenv_find_ws_path`/src/$1"
+	else
+		echo "Go workspace not set"
+	fi
+}
+
+_goenv_cd() {
+    if [[ -n "$GOPATH" ]]
+    then
+    	cd `_goenv_find_ws_path`/src/$1
+	fi
 }
 
 _goenv_bootstrap() {
@@ -227,10 +260,10 @@ _goenv_exec() {
         fi
         ;;
     edit)
-        _goenv_edit `_goenv_find_ws_path`/src/$2
+        _goenv_edit $2
         ;;
     cd)
-    	cd `_goenv_find_ws_path`/src/$2
+    	_goenv_cd $2
     	;;
     *)
         echo "Invalid command"
@@ -266,23 +299,19 @@ goenv() {
             _goenv_exec $cmd
         fi
         ;;
-    reset)
-        _goenv_reset
-        ;;
-    list)
-        _goenv_list
-        ;;
-    which)
-        _goenv_which
-        ;;
-    env)
-        _goenv_env
-        ;;
-    bootstrap)
-    	_goenv_bootstrap
+    reset     ) _goenv_reset;;
+    list      ) _goenv_list;;
+    which     ) _goenv_which;;
+    env       ) _goenv_env;;
+    bootstrap ) _goenv_bootstrap;;
+    --commands) _goenv_commands;;
+    --complete)
+    	shift
+    	if [ $# -gt 0 ]
+    	then
+    		_goenv_complete $*
+    	fi
     	;;
-    help | *)
-        _goenv_help
-        ;;
+    help | *) _goenv_help;;
     esac
 }
