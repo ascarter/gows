@@ -15,8 +15,5 @@ _goenv_complete_zsh() {
 	else
 		completions="$(goenv --complete "${words[2,-2]}")"
 	fi
-# 	word="$1"
-# 	completions="$(goenv --complete "${word}")"
-# 	echo "$completions"
 	reply=("${(ps:\n:)completions}")
 }

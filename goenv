@@ -1,26 +1,30 @@
 #  -*- mode: unix-shell-script; -*-
 
 _goenv_help() {
-    echo "Go workspace manager\n"
-    echo "Usage:\n"
-    echo "\tgoenv command [arguments]\n"
-    echo "The commands are:\n"
-    echo "\trun        detects go path and runs command in that environment"
-    echo "\tinit       initialize path as workspace (default working directory)"
-    echo "\tswitch     switch workspace to path (default to working directory)"
-    echo "\tadd        add path to workspace (default working directory)"
-    echo "\trm         remove path from workspace (default working directory)"
-    echo "\treset      reset to empty workspace"
-    echo "\tbootstrap  install default packages (defined in .goenvrc)"
-    echo "\tlist       list all workspace paths"
-    echo "\twhich      show current Go workspace"
-    echo "\tenv        environment variables for workspace"
-    echo "\tedit       open package path in VISUAL editor (default \$GOPATH/src)"
-    echo "\tcd         switch to directory of package path (default \$GOPATH/src)"
-    echo "\ngoenv manages the workspace by setting the GOPATH environment variable"
+    echo "Go workspace manager"
+    echo
+    echo "Usage:"
+    echo "    goenv command [arguments]"
+    echo
+    echo "The commands are:"
+    echo "    run        detects go path and runs command in that environment"
+    echo "    init       initialize path as workspace (default working directory)"
+    echo "    switch     switch workspace to path (default to working directory)"
+    echo "    add        add path to workspace (default working directory)"
+    echo "    rm         remove path from workspace (default working directory)"
+    echo "    reset      reset to empty workspace"
+    echo "    bootstrap  install default packages (defined in .goenvrc)"
+    echo "    list       list all workspace paths"
+    echo "    which      show current Go workspace"
+    echo "    env        environment variables for workspace"
+    echo "    edit       open package path in VISUAL editor (default \$GOPATH/src)"
+    echo "    cd         switch to directory of package path (default \$GOPATH/src)"
+    echo
+    echo "goenv manages the workspace by setting the GOPATH environment variable"
     echo "When setting or adding a workspace, goenv will search up the path"
     echo "to find the parent with the required GOPATH entries of bin, pkg, and src"
-    echo "\nSource goenv.$(basename "${shell:-$SHELL}") to add command completions."
+    echo
+    echo "Source goenv.$(basename "${shell:-$SHELL}") to add command completions."
 }
 
 _goenv_commands() {
