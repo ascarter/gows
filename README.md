@@ -25,5 +25,3 @@ The commands are:
 goenv manages the workspace by setting the GOPATH environment variable
 When setting or adding a workspace, goenv will search up the path
 to find the parent with the required GOPATH entries of bin, pkg, and src
-
-Source goenv.zsh to add command completions.

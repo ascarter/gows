@@ -28,8 +28,7 @@ _goenv_help() {
 }
 
 _goenv_commands() {
-	for c in run init switch add rm reset bootstrap list which env edit cd
-	do
+	for c in run init switch add rm reset bootstrap list which env edit cd; do
 		echo $c
 	done
 }
@@ -37,8 +36,7 @@ _goenv_commands() {
 _goenv_complete() {
 	case "$1" in
 		cd | edit)
-			if [ -n "$GOPATH" ]
-			then
+			if [ -n "$GOPATH" ]; then
 				comm -3 <(go list all) <(go list std)
 			fi
 			;;
@@ -51,12 +49,9 @@ _goenv_read_config() {
 	rcfiles=(/usr/etc/goenvrc /usr/local/etc/goenvrc ~/.goenvrc ./.goenvrc)
 	packages=()
 	
-	for rc in ${rcfiles[*]}
-	do
-		if [ -e $rc ]
-		then
-			while read line
-			do
+	for rc in ${rcfiles[*]}; do
+		if [ -e $rc ]; then
+			while read line; do
 				packages=("${packages[@]}" $line)
 			done <$rc
 		fi
@@ -76,8 +71,7 @@ _goenv_fullpath() {
 
 _goenv_find_ws_path() {
     local WSPATH=$(pwd)
-    while [[ "$WSPATH" != "" && ! -e "$WSPATH/bin" && ! -e "$WSPATH/pkg" && ! -e "$WSPATH/src" ]]
-    do
+    while [[ "$WSPATH" != "" && ! -e "$WSPATH/bin" && ! -e "$WSPATH/pkg" && ! -e "$WSPATH/src" ]]; do
         WSPATH=${WSPATH%/*}
     done
     echo "$WSPATH"
@@ -92,8 +86,7 @@ _goenv_split() {
 }
 
 _goenv_init() {
-    if [ -n "$1" ]
-then
+    if [ -n "$1" ]; then
         mkdir -p $1/bin
         mkdir -p $1/pkg
         mkdir -p $1/src
@@ -105,10 +98,8 @@ then
 }
 
 _goenv_switch() {
-    if [[ -n "$1" && -d "$1" ]]
-then
-        if [ -n "$GOPATH" ]
-        then
+    if [[ -n "$1" && -d "$1" ]]; then
+        if [ -n "$GOPATH" ]; then
             _goenv_reset
         fi
     
@@ -127,13 +118,10 @@ then
 }
 
 _goenv_add() {
-    if [[ -n "$1" && -d "$1" ]]
-then
-        if [[ -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]
-        then
+    if [[ -n "$1" && -d "$1" ]]; then
+        if [[ -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
             echo "Workspace already added"
-        elif [ -z "$_GOENV_OLD_PATH" ]
-        then
+        elif [ -z "$_GOENV_OLD_PATH" ]; then
             _goenv_switch $1
         else
             GOPATH=$GOPATH:$1
@@ -146,15 +134,12 @@ then
 }
 
 _goenv_rm() {
-    if [[ -n "$1" && -d "$1" && -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]
-then
+    if [[ -n "$1" && -d "$1" && -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
         local items=$GOPATH
         _goenv_reset
         items=(`_goenv_split $items ":"`)
-        for item in "${items[@]}"
-        do
-            if [ "$item" != "$1" ]
-            then
+        for item in "${items[@]}"; do
+            if [ "$item" != "$1" ]; then
                 _goenv_add $item
             fi
         done
@@ -164,10 +149,8 @@ then
 }
 
 _goenv_reset() {
-    if [ -n "$GOPATH" ]
-    then
-        if [ -n "$_GOENV_OLD_PATH" ]
-        then
+    if [ -n "$GOPATH" ]; then
+        if [ -n "$_GOENV_OLD_PATH" ]; then
             PATH=$_GOENV_OLD_PATH
             export PATH
             unset _GOENV_OLD_PATH
@@ -179,11 +162,9 @@ _goenv_reset() {
 }
 
 _goenv_list() {    
-    if [[ -n "$GOPATH" ]]
-    then
+    if [[ -n "$GOPATH" ]]; then
         items=(`_goenv_split $GOPATH ":"`)
-        for item in "${items[@]}"
-        do
+        for item in "${items[@]}"; do
           echo "$item"
         done
     else
@@ -201,10 +182,8 @@ _goenv_env() {
 }
 
 _goenv_edit() {
-    if [[ -n "$GOPATH" ]]
-    then
-		if [ -z "$VISUAL" ]
-		then
+    if [[ -n "$GOPATH" ]]; then
+		if [ -z "$VISUAL" ]; then
 			echo "VISUAL editor is not set"
 			exit 1
 		fi
@@ -215,15 +194,13 @@ _goenv_edit() {
 }
 
 _goenv_cd() {
-    if [[ -n "$GOPATH" ]]
-    then
+    if [[ -n "$GOPATH" ]]; then
     	cd `_goenv_find_ws_path`/src/$1
 	fi
 }
 
 _goenv_bootstrap() {
-	for pkg in ${packages[*]}
-	do
+	for pkg in ${packages[*]}; do
 		echo "Getting package $pkg"
 		go get "${pkg}"
 	done
@@ -232,32 +209,28 @@ _goenv_bootstrap() {
 _goenv_exec() {
     case "$1" in
     init)
-        if [ -z "$2" ]
-        then
+        if [ -z "$2" ]; then
             _goenv_init $(pwd)
         else
             _goenv_init `_goenv_fullpath $2`
         fi
         ;;
     switch)
-        if [ -z "$2" ]
-        then
+        if [ -z "$2" ]; then
             _goenv_switch `_goenv_find_ws_path`
         else
             _goenv_switch `_goenv_fullpath $2`
         fi
         ;;
     add)
-        if [ -z "$2" ]
-        then
+        if [ -z "$2" ]; then
             _goenv_add `_goenv_find_ws_path`
         else
             _goenv_add `_goenv_fullpath $2`
         fi
         ;;
     rm)
-        if [ -z "$2" ]
-        then
+        if [ -z "$2" ]; then
             _goenv_rm `_goenv_find_ws_path`
         else
             _goenv_rm `_goenv_fullpath $2`
@@ -284,18 +257,15 @@ goenv() {
     	shift
     	(
     		_goenv_exec "switch"
-    		if [ 0 -eq $? ]
-    		then
+    		if [ 0 -eq $? ]; then
     			"$@"
     		fi
     	)
     	;;
     init | switch | add | rm | edit | cd)
         shift
-        if [ $# -gt 0 ]
-        then
-            while (($#))
-            do
+        if [ $# -gt 0 ]; then
+            while (($#)); do
                 _goenv_exec $cmd $1
                 shift
             done
@@ -311,11 +281,17 @@ goenv() {
     --commands) _goenv_commands;;
     --complete)
     	shift
-    	if [ $# -gt 0 ]
-    	then
+    	if [ $# -gt 0 ]; then
     		_goenv_complete $*
     	fi
     	;;
     help | *) _goenv_help;;
     esac
 }
+
+# Setup completion
+if [ -n "$BASH_VERSION" ]; then
+	source "$(dirname "${BASH_SOURCE[0]}")/goenv.bash"
+elif [ -n "$ZSH_VERSION" ]; then
+	source "$(dirname "$0")/goenv.zsh"
+fi
