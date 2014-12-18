@@ -36,9 +36,12 @@ _goenv_commands() {
 _goenv_complete() {
 	case "$1" in
 		cd | edit)
-			if [ -n "$GOPATH" ]; then
-				comm -3 <(go list all) <(go list std)
-			fi
+			# Use current workspace only
+			(
+				# go list std doesn't include cmd/internal/rsc.io/* so filter manually
+				GOPATH=`_goenv_find_ws_path`
+				comm -3 <(go list all) <(go list std) | grep -v "cmd/internal/*"
+			)
 			;;
 		*)
 			;;
@@ -99,17 +102,19 @@ _goenv_init() {
 
 _goenv_switch() {
     if [[ -n "$1" && -d "$1" ]]; then
-        if [ -n "$GOPATH" ]; then
-            _goenv_reset
-        fi
-    
         # Cache the original path
         _GOENV_OLD_PATH=$PATH
         export _GOENV_OLD_PATH
+        
+        if [ -n "$GOPATH" ]; then    
+			# Cache original GOPATH
+			_GOENV_OLD_GOPATH=$GOPATH
+			export _GOENV_OLD_GOPATH
+        fi
 
-        # Set GOPATH    
-        GOPATH=$1
+        GOPATH=$GOPATH:$1
         export GOPATH
+        
         PATH=$PATH:$GOPATH/bin
         export PATH
     else
@@ -126,7 +131,9 @@ _goenv_add() {
         else
             GOPATH=$GOPATH:$1
             export GOPATH
+            
             PATH=$_GOENV_OLD_PATH:${GOPATH//://bin:}/bin
+            export PATH
         fi
     else
         echo "Go workspace missing"
@@ -142,7 +149,7 @@ _goenv_rm() {
             if [ "$item" != "$1" ]; then
                 _goenv_add $item
             fi
-        done
+        done 
     else
         echo "Go workspace missing"
     fi
@@ -155,7 +162,11 @@ _goenv_reset() {
             export PATH
             unset _GOENV_OLD_PATH
         fi
-        unset GOPATH
+        if [ -n "$_GOENV_OLD_GOPATH" ]; then
+        	GOPATH=$_GOENV_OLD_GOPATH
+        	export GOPATH
+	        unset _GOENV_OLD_GOPATH
+	    fi
     else
         echo "Go workspace not set"
     fi
@@ -194,9 +205,8 @@ _goenv_edit() {
 }
 
 _goenv_cd() {
-    if [[ -n "$GOPATH" ]]; then
-    	cd `_goenv_find_ws_path`/src/$1
-	fi
+	cd `_goenv_find_ws_path`/src/$1
+	_goenv_add `_goenv_find_ws_path`
 }
 
 _goenv_bootstrap() {
