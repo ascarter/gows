@@ -1,3 +1,5 @@
+#  -*- mode: unix-shell-script; -*-
+
 _gows_complete_bash() {
 	COMPREPLY=()
 	local word="${COMP_WORDS[COMP_CWORD]}"

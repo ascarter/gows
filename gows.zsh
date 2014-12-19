@@ -1,3 +1,5 @@
+#  -*- mode: unix-shell-script; -*-
+
 if [[ ! -o interactive ]]
 then
 	return
