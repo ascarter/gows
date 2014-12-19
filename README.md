@@ -41,6 +41,7 @@ Launch a new shell session and create a new project workspace
         cd         switch to directory of package path (default $GOPATH/src)
         edit       open package path in VISUAL editor (default $GOPATH/src)
         env        environment variables for workspace
+        get        download and install package to current workspace
         init       initialize path as workspace (default working directory)
         list       list all workspace paths
         reset      reset to empty workspace
