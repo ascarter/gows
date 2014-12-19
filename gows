@@ -1,42 +1,42 @@
 #  -*- mode: unix-shell-script; -*-
 
-_goenv_help() {
+_gows_help() {
     echo "Go workspace manager"
     echo
     echo "Usage:"
-    echo "    goenv command [arguments]"
+    echo "    gows command [arguments]"
     echo
     echo "The commands are:"
-    echo "    run        detects go path and runs command in that environment"
-    echo "    init       initialize path as workspace (default working directory)"
-    echo "    switch     switch workspace to path (default to working directory)"
     echo "    add        add path to workspace (default working directory)"
-    echo "    rm         remove path from workspace (default working directory)"
-    echo "    reset      reset to empty workspace"
-    echo "    list       list all workspace paths"
-    echo "    which      show current Go workspace"
-    echo "    env        environment variables for workspace"
-    echo "    edit       open package path in VISUAL editor (default \$GOPATH/src)"
     echo "    cd         switch to directory of package path (default \$GOPATH/src)"
+    echo "    edit       open package path in VISUAL editor (default \$GOPATH/src)"
+    echo "    env        environment variables for workspace"
+    echo "    init       initialize path as workspace (default working directory)"
+    echo "    list       list all workspace paths"
+    echo "    reset      reset to empty workspace"
+    echo "    rm         remove path from workspace (default working directory)"
+    echo "    run        detects go path and runs command in that environment"
+    echo "    switch     switch workspace to path (default to working directory)"
+    echo "    which      show current Go workspace"
     echo
-    echo "goenv manages the workspace by setting the GOPATH environment variable"
-    echo "When setting or adding a workspace, goenv will search up the path"
+    echo "gows manages the workspace by setting the GOPATH environment variable"
+    echo "When setting or adding a workspace, gows will search up the path"
     echo "to find the parent with the required GOPATH entries of bin, pkg, and src"
 }
 
-_goenv_commands() {
+_gows_commands() {
 	for c in run init switch add rm reset list which env edit cd; do
 		echo $c
 	done
 }
 
-_goenv_complete() {
+_gows_complete() {
 	case "$1" in
 		cd | edit)
 			# Use current workspace only
 			(
 				# go list std doesn't include cmd/internal/rsc.io/* so filter manually
-				GOPATH=`_goenv_find_ws_path`
+				GOPATH=`_gows_find_ws_path`
 				comm -3 <(go list all) <(go list std) | grep -v "cmd/internal/*"
 			)
 			;;
@@ -45,7 +45,7 @@ _goenv_complete() {
 	esac
 }
 
-_goenv_fullpath() {
+_gows_fullpath() {
   case "$1" in
     /*)
         echo "$1"
@@ -56,7 +56,7 @@ _goenv_fullpath() {
   esac
 }
 
-_goenv_find_ws_path() {
+_gows_find_ws_path() {
     local WSPATH=$(pwd)
     while [[ "$WSPATH" != "" && ! -e "$WSPATH/bin" && ! -e "$WSPATH/pkg" && ! -e "$WSPATH/src" ]]; do
         WSPATH=${WSPATH%/*}
@@ -64,7 +64,7 @@ _goenv_find_ws_path() {
     echo "$WSPATH"
 }
 
-_goenv_split() {
+_gows_split() {
     OLDIFS="$IFS"
     IFS=$2
     items=(`echo $1`)
@@ -72,31 +72,31 @@ _goenv_split() {
     echo $items
 }
 
-_goenv_init() {
+_gows_init() {
     if [ -n "$1" ]; then
         mkdir -p $1/bin
         mkdir -p $1/pkg
         mkdir -p $1/src
-        _goenv_add $1
+        _gows_add $1
     else
         echo "Path does not exist"
     fi
 }
 
-_goenv_switch() {
+_gows_switch() {
 	# Reset workspace if already set
-	if [ -n "$_GOENV_OLD_PATH" ]; then
-		_goenv_reset
+	if [ -n "$_GOWS_OLD_PATH" ]; then
+		_gows_reset
 	fi
 	
 	# Cache original values before switching to allow reset
     if [[ -n "$1" && -d "$1" ]]; then
-        _GOENV_OLD_PATH=$PATH
-        export _GOENV_OLD_PATH
+        _GOWS_OLD_PATH=$PATH
+        export _GOWS_OLD_PATH
         
         if [ -n "$GOPATH" ]; then    
-			_GOENV_OLD_GOPATH=$GOPATH
-			export _GOENV_OLD_GOPATH
+			_GOWS_OLD_GOPATH=$GOPATH
+			export _GOWS_OLD_GOPATH
         fi
 
         GOPATH=$GOPATH:$1
@@ -109,17 +109,17 @@ _goenv_switch() {
     fi
 }
 
-_goenv_add() {
+_gows_add() {
     if [[ -n "$1" && -d "$1" ]]; then
-        if [[ -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
-            echo "Workspace already added"
-        elif [ -z "$_GOENV_OLD_PATH" ]; then
-            _goenv_switch $1
-        else
+        if [ -z "$_GOWS_OLD_PATH" ]; then
+        	# Workspace has not been set yet
+            _gows_switch $1
+        elif [[ -n "$GOPATH" && ! "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
+        	# Add workspace if not already on GOPATH
             GOPATH=$GOPATH:$1
             export GOPATH
             
-            PATH=$_GOENV_OLD_PATH:${GOPATH//://bin:}/bin
+            PATH=$_GOWS_OLD_PATH:${GOPATH//://bin:}/bin
             export PATH
         fi
     else
@@ -127,14 +127,14 @@ _goenv_add() {
     fi
 }
 
-_goenv_rm() {
+_gows_rm() {
     if [[ -n "$1" && -d "$1" && -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
         local items=$GOPATH
-        _goenv_reset $@
-        items=(`_goenv_split $items ":"`)
+        _gows_reset
+        items=(`_gows_split $items ":"`)
         for item in "${items[@]}"; do
             if [ "$item" != "$1" ]; then
-                _goenv_add $item
+                _gows_add $item
             fi
         done
     else
@@ -142,26 +142,26 @@ _goenv_rm() {
     fi
 }
 
-_goenv_reset() {
+_gows_reset() {
     if [ -n "$GOPATH" ]; then
-        if [ -n "$_GOENV_OLD_PATH" ]; then
-            PATH=$_GOENV_OLD_PATH
+        if [ -n "$_GOWS_OLD_PATH" ]; then
+            PATH=$_GOWS_OLD_PATH
             export PATH
-            unset _GOENV_OLD_PATH
+            unset _GOWS_OLD_PATH
         fi
-        if [ -n "$_GOENV_OLD_GOPATH" ]; then
-        	GOPATH=$_GOENV_OLD_GOPATH
+        if [ -n "$_GOWS_OLD_GOPATH" ]; then
+        	GOPATH=$_GOWS_OLD_GOPATH
         	export GOPATH
-	        unset _GOENV_OLD_GOPATH
+	        unset _GOWS_OLD_GOPATH
 	    fi
     else
         echo "Go workspace not set"
     fi
 }
 
-_goenv_list() {    
+_gows_list() {    
     if [[ -n "$GOPATH" ]]; then
-        items=(`_goenv_split $GOPATH ":"`)
+        items=(`_gows_split $GOPATH ":"`)
         for item in "${items[@]}"; do
           echo "$item"
         done
@@ -170,119 +170,119 @@ _goenv_list() {
     fi
 }
 
-_goenv_which() {
-    echo `_goenv_find_ws_path`
+_gows_which() {
+    echo `_gows_find_ws_path`
 }
 
-_goenv_env() {
+_gows_env() {
         echo "GOPATH=$GOPATH"
         echo "GOROOT=$GOROOT"        
 }
 
-_goenv_edit() {
+_gows_edit() {
     if [[ -n "$GOPATH" ]]; then
 		if [ -z "$VISUAL" ]; then
 			echo "VISUAL editor is not set"
 			exit 1
 		fi
-		"$VISUAL" "`_goenv_find_ws_path`/src/$1"
+		"$VISUAL" "`_gows_find_ws_path`/src/$1"
 	else
 		echo "Go workspace not set"
 	fi
 }
 
-_goenv_cd() {
-	cd `_goenv_find_ws_path`/src/$1
-	_goenv_add `_goenv_find_ws_path`
+_gows_cd() {
+	cd `_gows_find_ws_path`/src/$1
+	_gows_add `_gows_find_ws_path`
 }
 
-_goenv_exec() {
+_gows_exec() {
     case "$1" in
     init)
         if [ -z "$2" ]; then
-            _goenv_init $(pwd)
+            _gows_init $(pwd)
         else
-            _goenv_init `_goenv_fullpath $2`
+            _gows_init `_gows_fullpath $2`
         fi
         ;;
     switch)
         if [ -z "$2" ]; then
-            _goenv_switch `_goenv_find_ws_path`
+            _gows_switch `_gows_find_ws_path`
         else
-            _goenv_switch `_goenv_fullpath $2`
+            _gows_switch `_gows_fullpath $2`
         fi
         ;;
     add)
         if [ -z "$2" ]; then
-            _goenv_add `_goenv_find_ws_path`
+            _gows_add `_gows_find_ws_path`
         else
-            _goenv_add `_goenv_fullpath $2`
+            _gows_add `_gows_fullpath $2`
         fi
         ;;
     rm)
         if [ -z "$2" ]; then
-            _goenv_rm `_goenv_find_ws_path`
+            _gows_rm `_gows_find_ws_path`
         else
-            _goenv_rm `_goenv_fullpath $2`
+            _gows_rm `_gows_fullpath $2`
         fi
         ;;
     edit)
-        _goenv_edit $2
+        _gows_edit $2
         ;;
     cd)
-    	_goenv_cd $2
+    	_gows_cd $2
     	;;
     *)
         echo "Invalid command"
     esac
 }
 
-goenv() {
+gows() {
     cmd=$1
     
     case "$cmd" in
     cd | edit | switch)
-    	_goenv_exec $@
+    	_gows_exec $@
         ;;
 	# Can add/remove/init a list of directories
     add | rm | init)
     	shift
     	if [ $# -gt 0 ]; then
     		while (($#)); do
-    			_goenv_exec $cmd $1
+    			_gows_exec $cmd $1
     			shift
     		done
     	else
-    		_goenv_exec $@
+    		_gows_exec $@
     	fi
     	;;
     run)
     	shift
     	(
-    		_goenv_exec "switch"
+    		_gows_exec "switch"
     		if [ 0 -eq $? ]; then
     			$@
     		fi
     	)
     	;;
-    reset     ) _goenv_reset $@;;
-    list      ) _goenv_list $@;;
-    which     ) _goenv_which $@;;
-    env       ) _goenv_env $@;;
-    --commands) _goenv_commands $@;;
+    reset     ) _gows_reset;;
+    list      ) _gows_list;;
+    which     ) _gows_which;;
+    env       ) _gows_env;;
+    --commands) _gows_commands;;
     --complete)
     	shift
     	if [ $# -gt 0 ]; then
-    		_goenv_complete $*
+    		_gows_complete $*
     	fi
     	;;
-    help | *) _goenv_help;;
+    help | *) _gows_help;;
     esac
 }
 
 # Setup completion
 if [ -n "$BASH_VERSION" ]; then
-	source "$(dirname "${BASH_SOURCE[0]}")/goenv.bash"
+	source "$(dirname "${BASH_SOURCE[0]}")/gows.bash"
 elif [ -n "$ZSH_VERSION" ]; then
-	source "$(dirname "$0")/goenv.zsh"
+	source "$(dirname "$0")/gows.zsh"
 fi

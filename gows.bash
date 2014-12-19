@@ -1,18 +1,18 @@
-_goenv_complete_bash() {
+_gows_complete_bash() {
 	COMPREPLY=()
 	local word="${COMP_WORDS[COMP_CWORD]}"
 	
 	if [ "$COMP_CWORD" -eq 1 ]
 	then
-		local completions=$(goenv --commands)
+		local completions=$(gows --commands)
 	else
 		local words=("${COMP_WORDS[@]}")
 		unset words[0]
 		unset words[$COMP_CWORD]
-		local completions=$(goenv --complete "${words[@]}")
+		local completions=$(gows --complete "${words[@]}")
 	fi
 	
 	COMPREPLY=( $(compgen -W "$completions" -- "$word") )
 }
 
-complete -F _goenv_complete_bash goenv
+complete -F _gows_complete_bash gows

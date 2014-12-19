@@ -3,17 +3,17 @@ then
 	return
 fi
 
-compctl -K _goenv_complete_zsh goenv
+compctl -K _gows_complete_zsh gows
 
-_goenv_complete_zsh() {
+_gows_complete_zsh() {
 	local words completions
 	read -cA words
 	
 	if [ "${#words}" -eq 2 ]
 	then
-		completions="$(goenv --commands)"
+		completions="$(gows --commands)"
 	else
-		completions="$(goenv --complete "${words[2,-2]}")"
+		completions="$(gows --complete "${words[2,-2]}")"
 	fi
 	reply=("${(ps:\n:)completions}")
 }
