@@ -121,17 +121,22 @@ _gows_split() {
 
 _gows_add() {
     if [[ -n "$1" && -d "$1" ]]; then
-        if [ -z "$_GOWS_OLD_PATH" ]; then
-        	# Workspace has not been set yet
-            _gows_switch $1
-        elif [[ -n "$GOPATH" && ! "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
-        	# Add workspace if not already on GOPATH
-            GOPATH=$GOPATH:$1
-            export GOPATH
-            
-            PATH=$_GOWS_OLD_PATH:${GOPATH//://bin:}/bin
-            export PATH
-        fi
+		# Verify target is a Go workspace
+		if [[ -d "$1/bin" && -d "$1/pkg" && -d "$1/src" ]]; then
+			if [ -z "$_GOWS_OLD_PATH" ]; then
+				# Workspace has not been set yet
+				_gows_switch $1
+			elif [[ -n "$GOPATH" && ! "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
+				# Add workspace if not already on GOPATH
+				GOPATH=$GOPATH:$1
+				export GOPATH
+			
+				PATH=$_GOWS_OLD_PATH:${1}/bin
+				export PATH
+			fi
+		else
+			echo "Not a Go workspace"
+		fi
     else
         echo "Go workspace missing"
     fi
@@ -156,7 +161,8 @@ _gows_edit() {
 
 _gows_env() {
         echo "GOPATH=$GOPATH"
-        echo "GOROOT=$GOROOT"        
+        echo "GOROOT=$GOROOT"
+        echo "PATH=$PATH"
 }
 
 _gows_get() {
@@ -237,12 +243,8 @@ _gows_switch() {
 			_GOWS_OLD_GOPATH=$GOPATH
 			export _GOWS_OLD_GOPATH
         fi
-
-        GOPATH=$GOPATH:$1
-        export GOPATH
         
-        PATH=$PATH:$GOPATH/bin
-        export PATH
+        _gows_add $1
     else
         echo "Go workspace missing"
     fi
