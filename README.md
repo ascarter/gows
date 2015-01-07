@@ -1,3 +1,5 @@
+# Go workspace manager
+
 `gows` is a set of shell extensions for managing Go workspaces. The recommend layout is to have a default workspace and at least one other development workspace. The default workspace is a useful location to install any external common go packages. The second workspace is a good choice for any of your own projects. `gows` helps you manage the two together.
 
 ## Install
