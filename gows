@@ -7,7 +7,7 @@ _gows_help() {
     echo "    gows command [arguments]"
     echo
     echo "The commands are:"
-    echo "    add        add path to workspace (default working directory)"
+    echo "    add        add path to front of workspace GOPATH (default current)"
     echo "    cd         switch to directory of package path (default \$GOPATH/src)"
     echo "    edit       open package path in VISUAL editor (default \$GOPATH/src)"
     echo "    env        environment variables for workspace"
@@ -15,25 +15,26 @@ _gows_help() {
     echo "    init       initialize path as workspace (default working directory)"
     echo "    list       list all workspace paths"
     echo "    reset      reset to empty workspace"
-    echo "    rm         remove path from workspace (default working directory)"
     echo "    run        detects go path and runs command in that environment"
     echo "    switch     switch workspace to path (default to working directory)"
+    echo "    vendor     create _vendor workspace (default in working directory)"
     echo "    which      show current Go workspace"
     echo
     echo "gows manages the workspace by setting the GOPATH environment variable"
     echo "When setting or adding a workspace, gows will search up the path"
     echo "to find the parent with the required GOPATH entries of bin, pkg, and src"
+    echo "Workspaces are added to the front of the GOPATH."
 }
 
 _gows_commands() {
-	for c in add cd edit env get init list reset rm run switch which; do
+	for c in add cd edit env get init list reset run switch vendor which; do
 		echo $c
 	done
 }
 
 _gows_complete() {
 	case "$1" in
-		cd | edit)
+		cd | edit | vendor)
 			# Use current workspace only
 			(
 				# go list std doesn't include cmd/internal/rsc.io/* so filter manually
@@ -71,13 +72,6 @@ _gows_exec() {
             _gows_init `_gows_fullpath $2`
         fi
         ;;
-    rm)
-        if [ -z "$2" ]; then
-            _gows_rm `_gows_find_ws_path`
-        else
-            _gows_rm `_gows_fullpath $2`
-        fi
-        ;;
     switch)
         if [ -z "$2" ]; then
             _gows_switch `_gows_find_ws_path`
@@ -85,6 +79,13 @@ _gows_exec() {
             _gows_switch `_gows_fullpath $2`
         fi
         ;;
+    vendor)
+    	if [ -z "$2" ]; then
+    		_gows_vendor $(pwd)
+    	else
+    		_gows_vendor `_gows_fullpath $2`
+    	fi
+    	;;
     *)
         echo "Invalid command"
     esac
@@ -128,10 +129,10 @@ _gows_add() {
 				_gows_switch $1
 			elif [[ -n "$GOPATH" && ! "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
 				# Add workspace if not already on GOPATH
-				GOPATH=$GOPATH:$1
+				GOPATH=${1}:${GOPATH}
 				export GOPATH
 			
-				PATH=$_GOWS_OLD_PATH:${1}/bin
+				PATH=${1}/bin:${PATH}
 				export PATH
 			fi
 		else
@@ -143,8 +144,25 @@ _gows_add() {
 }
 
 _gows_cd() {
-	cd `_gows_find_ws_path`/src/$1
+	# Determine if relative or full path or package name
+	case "$1" in
+		/*)
+			cd `_gows_fullpath $1`
+			;;
+		.*)
+			cd "$1"
+			;;
+		*)
+			cd `_gows_find_ws_path`/src/$1
+			;;
+	esac
+	
 	_gows_add `_gows_find_ws_path`
+	
+	# Add _vendor if present
+	if [ -d $(pwd)/_vendor ]; then
+		_gows_add $(pwd)/_vendor
+	fi
 }
 
 _gows_edit() {
@@ -162,6 +180,7 @@ _gows_edit() {
 _gows_env() {
         echo "GOPATH=$GOPATH"
         echo "GOROOT=$GOROOT"
+        echo "GOBIN=$GOBIN"
         echo "PATH=$PATH"
 }
 
@@ -176,9 +195,7 @@ _gows_get() {
 
 _gows_init() {
     if [ -n "$1" ]; then
-        mkdir -p $1/bin
-        mkdir -p $1/pkg
-        mkdir -p $1/src
+        mkdir -p $1/bin $1/pkg $1/src
         _gows_add $1
     else
         echo "Path does not exist"
@@ -213,21 +230,6 @@ _gows_reset() {
     fi
 }
 
-_gows_rm() {
-    if [[ -n "$1" && -d "$1" && -n "$GOPATH" && "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
-        local items=$GOPATH
-        _gows_reset
-        items=(`_gows_split $items ":"`)
-        for item in "${items[@]}"; do
-            if [ "$item" != "$1" ]; then
-                _gows_add $item
-            fi
-        done
-    else
-        echo "Go workspace missing"
-    fi
-}
-
 _gows_switch() {
 	# Reset workspace if already set
 	if [ -n "$_GOWS_OLD_PATH" ]; then
@@ -244,10 +246,32 @@ _gows_switch() {
 			export _GOWS_OLD_GOPATH
         fi
         
+        if [ -n "$GOBIN" ]; then
+        	_GOWS_OLD_GOBIN=$GOBIN
+        	export _GOWS_OLD_GOBIN
+        fi
+        
         _gows_add $1
+        
+        # Set go bin install
+    	GOBIN=`_gows_find_ws_path`/bin
+    	export GOBIN
+    	
+    	PATH=${GOBIN}:${PATH}
+    	export PATH
     else
         echo "Go workspace missing"
     fi
+}
+
+_gows_vendor() {
+	local vendor_path="$1/_vendor"
+	if [ -d "$vendor_path" ]; then
+		_gows_add $vendor_path
+	else
+		mkdir -p $vendor_path
+		_gows_init $vendor_path
+	fi
 }
 
 _gows_which() {
@@ -263,8 +287,8 @@ gows() {
     cd | get | edit | switch)
     	_gows_exec $@
         ;;
-	# Can add/remove/init a list of directories
-    add | get | rm | init)
+	# Can add/remove/init/vendor a list of directories
+    add | get | init | vendor)
     	shift
     	if [ $# -gt 0 ]; then
     		while (($#)); do
@@ -272,7 +296,7 @@ gows() {
     			shift
     		done
     	else
-    		_gows_exec $@
+    		_gows_exec $cmd
     	fi
     	;;
     run)
