@@ -127,13 +127,19 @@ _gows_add() {
 			if [ -z "$_GOWS_OLD_PATH" ]; then
 				# Workspace has not been set yet
 				_gows_switch $1
-			elif [[ -n "$GOPATH" && ! "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
-				# Add workspace if not already on GOPATH
-				GOPATH=${1}:${GOPATH}
+			elif [[ ! "$GOPATH" =~  (^|:)"$1"(:|$) ]]; then
+				# Add workspace
+				if [ -n "$GOPATH" ]; then
+					GOPATH=${1}:${GOPATH}
+				else
+					GOPATH=${1}
+				fi
 				export GOPATH
 			
 				PATH=${1}/bin:${PATH}
 				export PATH
+			else
+				echo "Workspace already set"
 			fi
 		else
 			echo "Not a Go workspace"
