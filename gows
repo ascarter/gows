@@ -10,8 +10,7 @@ _gows_help() {
     echo "    add        add path to front of workspace GOPATH (default current)"
     echo "    cd         switch to directory of package path (default \$GOPATH/src)"
     echo "    edit       open package path in VISUAL editor (default \$GOPATH/src)"
-    echo "    get        download and install package to current workspace"
-    echo "    init       initialize path as workspace (default working directory)"
+    echo "    init       initialize workspace (default working directory)"
     echo "    list       list all workspace paths"
     echo "    reset      reset to empty workspace"
     echo "    run        detects go path and runs command in that environment"
@@ -22,10 +21,16 @@ _gows_help() {
     echo "When setting or adding a workspace, gows will search up the path"
     echo "to find the parent with the required GOPATH entries of bin, pkg, and src"
     echo "Workspaces are added to the front of an existing GOPATH."
+    echo
+    echo "gows init will install all packages listed in the following:"
+    echo "    /usr/etc/goenvrc"
+    echo "    /usr/local/etc/goenvrc"
+    echo "    ~/.goenvrc"
+    echo "    .goenvrc"
 }
 
 _gows_commands() {
-	for c in add cd edit get init list reset run switch which; do
+	for c in add cd edit init list reset run switch which; do
 		echo $c
 	done
 }
@@ -45,6 +50,19 @@ _gows_complete() {
 	esac
 }
 
+_gows_config() {
+	rcfiles=(/usr/etc/goenvrc /usr/local/etc/goenvrc ~/.goenvrc ./.goenvrc)
+	packages=()
+	
+	for rc in ${rcfiles[*]}; do
+		if [ -e $rc ]; then
+			while read line; do
+				packages=("${packages[@]}" $line)
+			done <$rc
+		fi
+	done
+}
+
 _gows_exec() {
     case "$1" in
     add)
@@ -60,9 +78,6 @@ _gows_exec() {
     edit)
         _gows_edit $2
         ;;
-    get)
-    	_gows_get $2
-    	;;
     init)
         if [ -z "$2" ]; then
             _gows_init $(pwd)
@@ -169,19 +184,19 @@ _gows_edit() {
 	fi
 }
 
-_gows_get() {
-	if [[ -n "$GOPATH" ]]; then
-		# Go get into the current workspace
-		GOPATH=`_gows_find_ws_path` go get $1
-	else
-		echo "Go workspace not set"
-	fi
-}
-
 _gows_init() {
     if [ -n "$1" ]; then
         mkdir -p $1/bin $1/pkg $1/src
         _gows_add $1
+        
+        # Read configuration
+        _gows_config
+        
+        # go get default packages
+        for pkg in ${packages[*]}; do
+        	echo "go get ${pkg}"
+			go get "${pkg}"
+        done
     else
         echo "Path does not exist"
     fi
@@ -249,11 +264,11 @@ gows() {
     cmd=$1
     
     case "$cmd" in
-    cd | get | edit | switch)
+    cd | edit | switch)
     	_gows_exec $@
         ;;
 	# Commands for list
-    add | get | init)
+    add | init)
     	shift
     	if [ $# -gt 0 ]; then
     		while (($#)); do

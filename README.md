@@ -23,16 +23,27 @@ Launch a new shell session and create a new project workspace
 
     gows init ~/Projects/mygows
 
-## Usage:
+## Configuration
 
+`gows` requires Go to be installed and properly configured.
+
+Additionally, `gows init` can install default list of packages. To configure the list of packages, a list of package paths can appear in the following locations:
+
+    /usr/etc/goenvrc
+    /usr/local/etc/goenvrc
+    ~/.goenvrc
+    .goenvrc
+
+This is a convenience to ensure that a set of packages can be made available whenever creating a new workspace.
+
+## Usage:
     gows command [arguments]
 
     The commands are:
         add        add path to front of workspace GOPATH (default current)
         cd         switch to directory of package path (default $GOPATH/src)
         edit       open package path in VISUAL editor (default $GOPATH/src)
-        get        download and install package to current workspace
-        init       initialize path as workspace (default working directory)
+        init       initialize workspace (default working directory)
         list       list all workspace paths
         reset      reset to empty workspace
         run        detects go path and runs command in that environment
@@ -42,4 +53,10 @@ Launch a new shell session and create a new project workspace
     gows manages the workspace by setting the GOPATH environment variable
     When setting or adding a workspace, gows will search up the path
     to find the parent with the required GOPATH entries of bin, pkg, and src
-    Workspaces are added to the front of the GOPATH.
+    Workspaces are added to the front of an existing GOPATH.
+
+    gows init will install all packages listed in the following:
+        /usr/etc/goenvrc
+        /usr/local/etc/goenvrc
+        ~/.goenvrc
+        .goenvrc
