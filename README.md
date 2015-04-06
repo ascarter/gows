@@ -1,6 +1,6 @@
 # Go workspace manager
 
-`gows` is a shell extensions for managing Go workspaces. `gows` allows switching to different workspaces managed independently. It will support multiple workspaces.
+`gows` is a shell extension for managing Go workspaces. `gows` allows switching to different workspaces managed independently. It will support multiple workspaces.
 
 ## Install
 
