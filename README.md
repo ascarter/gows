@@ -44,6 +44,7 @@ This is a convenience to ensure that a set of packages can be made available whe
         cd         switch to directory of package path (default $GOPATH/src)
         edit       open package path in VISUAL editor (default $GOPATH/src)
         init       initialize workspace (default working directory)
+        install    install default Go packages
         list       list all workspace paths
         reset      reset to empty workspace
         run        detects go path and runs command in that environment

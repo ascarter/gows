@@ -11,6 +11,7 @@ _gows_help() {
     echo "    cd         switch to directory of package path (default \$GOPATH/src)"
     echo "    edit       open package path in VISUAL editor (default \$GOPATH/src)"
     echo "    init       initialize workspace (default working directory)"
+    echo "    install    install default Go packages"
     echo "    list       list all workspace paths"
     echo "    reset      reset to empty workspace"
     echo "    run        detects go path and runs command in that environment"
@@ -85,6 +86,9 @@ _gows_exec() {
             _gows_init `_gows_fullpath $2`
         fi
         ;;
+    install)
+    	_gows_install
+    	;;
     switch)
         if [ -z "$2" ]; then
             _gows_switch `_gows_find_ws_path`
@@ -176,7 +180,7 @@ _gows_edit() {
     if [[ -n "$GOPATH" ]]; then
 		if [ -z "$VISUAL" ]; then
 			echo "VISUAL editor is not set"
-			exit 1
+			return
 		fi
 		"$VISUAL" "`_gows_find_ws_path`/src/$1"
 	else
@@ -186,20 +190,35 @@ _gows_edit() {
 
 _gows_init() {
     if [ -n "$1" ]; then
+    	# Verify that directory is not already a Go workspace
+    	if [ -n $(_gows_find_ws_path) ]; then
+    		echo "Path is already in a workspace"
+    		return
+    	fi
+    
         mkdir -p $1/bin $1/pkg $1/src
         _gows_add $1
         
-        # Read configuration
-        _gows_config
-        
-        # go get default packages
-        for pkg in ${packages[*]}; do
-        	echo "go get ${pkg}"
-			go get "${pkg}"
-        done
+        # Install default packages
+        _gows_install
     else
         echo "Path does not exist"
     fi
+}
+
+_gows_install() {
+	if [[ -n "${GOPATH}" ]]; then
+        # Read configuration
+        _gows_config
+        
+		# go get default packages
+		for pkg in ${packages[*]}; do
+			echo "go get ${pkg}"
+			go get "${pkg}"
+		done
+	else
+		echo "Go workspace not set"
+	fi
 }
 
 _gows_list() {    
@@ -264,7 +283,7 @@ gows() {
     cmd=$1
     
     case "$cmd" in
-    cd | edit | switch)
+    cd | edit | install | switch)
     	_gows_exec $@
         ;;
 	# Commands for list
