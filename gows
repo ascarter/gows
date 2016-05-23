@@ -16,7 +16,7 @@ _gows_help() {
     echo "    reset      reset to empty workspace"
     echo "    run        detects go path and runs command in that environment"
     echo "    switch     switch workspace to path (default to working directory)"
-    echo "    which      show current Go workspace"
+    echo "    which      show workspace for path (default to working directory)"
     echo
     echo "gows manages the workspace by setting the GOPATH environment variable"
     echo "When setting or adding a workspace, gows will search up the path"
@@ -31,7 +31,7 @@ _gows_help() {
 }
 
 _gows_commands() {
-	for c in add cd edit init list reset run switch which; do
+	for c in add cd edit init install list reset run switch which; do
 		echo $c
 	done
 }
@@ -102,11 +102,13 @@ _gows_exec() {
 }
 
 _gows_find_ws_path() {
-    local WSPATH=$(pwd)
-    while [[ "$WSPATH" != "" ]] && ! [[ -d "$WSPATH/bin" && -d "$WSPATH/pkg" && -d "$WSPATH/src" ]]; do
-        WSPATH=${WSPATH%/*}
-    done
-    echo "$WSPATH"
+    local WSPATH=${1:-$(pwd)}
+    if [ -d "${WSPATH}" ]; then
+		while [[ "$WSPATH" != "" ]] && ! [[ -d "$WSPATH/bin" && -d "$WSPATH/pkg" && -d "$WSPATH/src" ]]; do
+			WSPATH=${WSPATH%/*}
+		done
+		echo `_gows_fullpath "$WSPATH"`
+	fi
 }
 
 _gows_fullpath() {
@@ -191,8 +193,8 @@ _gows_edit() {
 _gows_init() {
     if [ -n "$1" ]; then
     	# Verify that directory is not already a Go workspace
-    	if [ -n $(_gows_find_ws_path) ]; then
-    		echo "Path is already in a workspace"
+    	if [ -n "$(_gows_find_ws_path "${1}")" ]; then
+    		echo "${1} is already in a workspace"
     		return
     	fi
     
@@ -274,7 +276,7 @@ _gows_switch() {
 }
 
 _gows_which() {
-    echo `_gows_find_ws_path`
+    echo `_gows_find_ws_path "${1}"`
 }
 
 # Command handler
@@ -309,7 +311,10 @@ gows() {
     	;;
     reset     ) _gows_reset;;
     list      ) _gows_list;;
-    which     ) _gows_which;;
+    which     )
+    	shift
+    	_gows_which $@
+    	;;
     --commands) _gows_commands;;
     --complete)
     	shift
