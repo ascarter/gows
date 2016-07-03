@@ -104,10 +104,10 @@ _gows_exec() {
 _gows_find_ws_path() {
     local WSPATH=${1:-$(pwd)}
     if [ -d "${WSPATH}" ]; then
-		while [[ "$WSPATH" != "" ]] && ! [[ -d "$WSPATH/bin" && -d "$WSPATH/pkg" && -d "$WSPATH/src" ]]; do
+		while [[ "${WSPATH}" != "" ]] && ! [[ -d "${WSPATH}/bin" && -d "${WSPATH}/pkg" && -d "${WSPATH}/src" ]]; do
 			WSPATH=${WSPATH%/*}
 		done
-		echo `_gows_fullpath "$WSPATH"`
+		echo `_gows_fullpath "${WSPATH}"`
 	fi
 }
 
@@ -193,7 +193,7 @@ _gows_edit() {
 _gows_init() {
     if [ -n "$1" ]; then
     	# Verify that directory is not already a Go workspace
-    	if [ -n "$(_gows_find_ws_path "${1}")" ]; then
+    	if [[ -n "$(_gows_find_ws_path "${1}")" ]]; then
     		echo "${1} is already in a workspace"
     		return
     	fi
