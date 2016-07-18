@@ -216,7 +216,7 @@ _gows_install() {
 		# go get default packages
 		for pkg in ${packages[*]}; do
 			echo "go get ${pkg}"
-			go get "${pkg}"
+			go get -u "${pkg}"
 		done
 	else
 		echo "Go workspace not set"
